@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RBAC Authentication System</title>
+
+    <style>
+
+        body{
+        font-family:Arial;
+        background:#f4f6f9;
+        margin:0;
+        }
+
+        .container{
+        width:1100px;
+        margin:auto;
+        margin-top:40px;
+        background:white;
+        padding:30px;
+        border-radius:10px;
+        box-shadow:0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        h1,h2{
+        text-align:center;
+        }
+
+        .forms{
+        display:flex;
+        gap:40px;
+        }
+
+        .form-box{
+        flex:1;
+        }
+
+        input,select{
+        width:100%;
+        padding:10px;
+        margin-top:8px;
+        margin-bottom:15px;
+        border:1px solid #ccc;
+        border-radius:5px;
+        }
+
+        button{
+        padding:10px 15px;
+        border:none;
+        background:#007bff;
+        color:white;
+        border-radius:5px;
+        cursor:pointer;
+        }
+
+        button:hover{
+        background:#0056b3;
+        }
+
+        .cards{
+        display:flex;
+        gap:20px;
+        margin-top:20px;
+        }
+
+        .card{
+        flex:1;
+        padding:20px;
+        border-radius:10px;
+        color:white;
+        text-align:center;
+        cursor:pointer;
+        }
+
+        .admin{
+        background:#e74c3c;
+        }
+
+        .user{
+        background:#2ecc71;
+        }
+
+        table{
+        width:100%;
+        border-collapse:collapse;
+        margin-top:20px;
+        }
+
+        table,th,td{
+        border:1px solid #ddd;
+        }
+
+        th{
+        background:#333;
+        color:white;
+        }
+
+        th,td{
+        padding:10px;
+        text-align:center;
+        }
+
+        .profile{
+        background:#f1f1f1;
+        padding:20px;
+        border-radius:10px;
+        margin-top:20px;
+        }
+
+        .logout{
+        background:black;
+        margin-top:20px;
+        }
+
+        .searchBox{
+        width:300px;
+        margin-top:20px;
+        }
+
+        .pagination{
+        margin-top:20px;
+        text-align:center;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>RBAC Authentication System</h1>
+
+    <!-- LOGIN / REGISTER -->
+
+    <div class="forms">
+
+        <div class="form-box">
+
+            <h2>Register</h2>
+
+            <input id="name" placeholder="Name">
+
+            <input id="regEmail" placeholder="Email">
+
+            <input id="regPassword" type="password" placeholder="Password">
+
+            <select id="role">
+                <option value="USER">USER</option>
+                <option value="ADMIN">ADMIN</option>
+            </select>
+
+            <button onclick="register()">Register</button>
+
+        </div>
+
+        <div class="form-box">
+
+            <h2>Login</h2>
+
+            <input id="loginEmail" placeholder="Email">
+
+            <input id="loginPassword" type="password" placeholder="Password">
+
+            <button onclick="login()">Login</button>
+
+        </div>
+
+    </div>
+
+    <p id="message"></p>
+
+
+    <!-- DASHBOARD -->
+
+    <div id="dashboard" style="display:none">
+
+        <h2>Dashboard</h2>
+
+        <div class="cards">
+
+            <div class="card admin" onclick="openAdminPanel()">
+                <h3>Admin Panel</h3>
+                <p>Manage Users</p>
+            </div>
+
+            <div class="card user" onclick="openUserPanel()">
+                <h3>User Panel</h3>
+                <p>View Profile</p>
+            </div>
+
+        </div>
+
+
+        <!-- ADMIN SECTION -->
+
+        <div id="adminSection" style="display:none">
+
+            <h2>Users List</h2>
+
+            <input class="searchBox" placeholder="Search email..." onkeyup="searchUsers(this.value)">
+
+            <table>
+
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+
+                <tbody id="userTable"></tbody>
+
+            </table>
+
+            <div class="pagination">
+
+                <button onclick="prevPage()">Prev</button>
+                <span id="pageNumber">1</span>
+                <button onclick="nextPage()">Next</button>
+
+            </div>
+
+        </div>
+
+
+        <!-- USER SECTION -->
+
+        <div id="userSection" style="display:none">
+
+            <h2>User Profile</h2>
+
+            <div class="profile">
+
+                <input id="p_id" type="hidden">
+
+                Name
+                <input id="p_name">
+
+                Email
+                <input id="p_email">
+
+                Role
+                <input id="p_role" readonly>
+
+                <button onclick="updateProfile()">Update Profile</button>
+
+                <button onclick="deleteAccount()">Delete My Account</button>
+
+            </div>
+
+        </div>
+
+        <button class="logout" onclick="logout()">Logout</button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    let currentUserEmail=""
+    let currentPage=0
+
+
+    function register(){
+
+    fetch("/api/auth/register",{
+    method:"POST",
+    headers:{
+    "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+    name:document.getElementById("name").value,
+    email:document.getElementById("regEmail").value,
+    password:document.getElementById("regPassword").value,
+    role:document.getElementById("role").value
+    })
+    })
+    .then(res=>res.text())
+    .then(msg=>{
+    document.getElementById("message").innerText=msg
+    })
+
+    }
+
+
+
+    function login(){
+
+    let email=document.getElementById("loginEmail").value
+
+    fetch("/api/auth/login",{
+    method:"POST",
+    headers:{
+    "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+    email:email,
+    password:document.getElementById("loginPassword").value
+    })
+    })
+    .then(res=>res.text())
+    .then(msg=>{
+
+    document.getElementById("message").innerText=msg
+
+    if(msg==="Login Successful"){
+
+    currentUserEmail=email
+
+    document.querySelector(".forms").style.display="none"
+    document.getElementById("dashboard").style.display="block"
+
+    loadProfile()
+
+    }
+
+    })
+
+    }
+
+
+
+    function openAdminPanel(){
+
+    document.getElementById("adminSection").style.display="block"
+    document.getElementById("userSection").style.display="none"
+
+    loadUsers()
+
+    }
+
+
+    function openUserPanel(){
+
+    document.getElementById("userSection").style.display="block"
+    document.getElementById("adminSection").style.display="none"
+
+    loadProfile()
+
+    }
+
+
+
+    function loadProfile(){
+
+    fetch("/api/user/profile/"+currentUserEmail)
+    .then(res=>res.json())
+    .then(user=>{
+
+    document.getElementById("p_id").value=user.id
+    document.getElementById("p_name").value=user.name
+    document.getElementById("p_email").value=user.email
+    document.getElementById("p_role").value=user.role
+
+    })
+
+    }
+
+
+
+    function updateProfile(){
+
+    let id=document.getElementById("p_id").value
+
+    fetch("/api/user/update/"+id,{
+    method:"PUT",
+    headers:{
+    "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+
+    name:document.getElementById("p_name").value,
+    email:document.getElementById("p_email").value
+
+    })
+    })
+    .then(res=>res.text())
+    .then(msg=>{
+    alert(msg)
+    })
+
+    }
+
+
+
+    function deleteAccount(){
+
+    let id=document.getElementById("p_id").value
+
+    fetch("/api/user/delete/"+id,{
+    method:"DELETE"
+    })
+    .then(res=>res.text())
+    .then(msg=>{
+
+    alert(msg)
+    logout()
+
+    })
+
+    }
+
+
+
+    function loadUsers(){
+
+    fetch("/api/admin/users?page="+currentPage)
+    .then(res=>res.json())
+    .then(users=>{
+
+    let table=""
+
+    users.forEach(u=>{
+
+    table+=`
+    <tr>
+    <td>${u.id}</td>
+    <td>${u.name}</td>
+    <td>${u.email}</td>
+    <td>${u.role}</td>
+    <td>
+    <button onclick="deleteUser(${u.id})">Delete</button>
+    </td>
+    </tr>
+    `
+
+    })
+
+    document.getElementById("userTable").innerHTML=table
+
+    })
+
+    }
+
+
+
+    function deleteUser(id){
+
+    fetch("/api/admin/users/"+id,{
+    method:"DELETE"
+    })
+    .then(res=>res.text())
+    .then(msg=>{
+
+    alert(msg)
+    loadUsers()
+
+    })
+
+    }
+
+
+
+    function searchUsers(email){
+
+    fetch("/api/admin/search/"+email)
+    .then(res=>res.json())
+    .then(users=>{
+
+    let table=""
+
+    users.forEach(u=>{
+
+    table+=`
+    <tr>
+    <td>${u.id}</td>
+    <td>${u.name}</td>
+    <td>${u.email}</td>
+    <td>${u.role}</td>
+    <td>
+    <button onclick="deleteUser(${u.id})">Delete</button>
+    </td>
+    </tr>
+    `
+
+    })
+
+    document.getElementById("userTable").innerHTML=table
+
+    })
+
+    }
+
+
+
+    function nextPage(){
+
+    currentPage++
+    document.getElementById("pageNumber").innerText=currentPage+1
+    loadUsers()
+
+    }
+
+    function prevPage(){
+
+    if(currentPage>0){
+    currentPage--
+    document.getElementById("pageNumber").innerText=currentPage+1
+    loadUsers()
+    }
+
+    }
+
+
+
+    function logout(){
+    location.reload()
+    }
+
+</script>
+
+</body>
+</html>

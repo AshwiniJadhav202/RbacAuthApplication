@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login</title>
+</head>
+
+<body>
+
+<h2>User Login</h2>
+
+<form id="loginForm">
+
+    Email:<br>
+    <input type="email" id="email" required><br><br>
+
+    Password:<br>
+    <input type="password" id="password" required><br><br>
+
+    <button type="submit">Login</button>
+
+</form>
+
+<p id="message"></p>
+
+<script>
+
+    document.getElementById("loginForm").addEventListener("submit",function(e){
+    e.preventDefault();
+
+    fetch("http://localhost:8080/api/auth/login",{
+    method:"POST",
+    headers:{
+    "Content-Type":"application/json"
+    },
+    body:JSON.stringify({
+    email:document.getElementById("email").value,
+    password:document.getElementById("password").value
+    })
+    })
+    .then(res=>res.text())
+    .then(data=>{
+    document.getElementById("message").innerText=data;
+
+    if(data==="Login Successful"){
+    window.location.href="dashboard.html";
+    }
+
+    });
+
+    });
+
+</script>
+
+</body>
+</html>
