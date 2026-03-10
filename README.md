@@ -192,10 +192,6 @@ User:
 
 ---
 
-# Screenshots
-
-(Add screenshots of login, register, dashboard here)
-
 ---
 
 # Future Improvements
